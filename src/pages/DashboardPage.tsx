@@ -6,7 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from 'shared-lib';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { DrillDownChart } from 'shared-lib';
 import {useCallback, useEffect, useState} from "react";
-import { useModuleLifecycle } from "../useModuleLifecycle.ts";
+import { useModuleLifecycle } from "../useModuleLifecycle";
 
 // ------- Static Data (unchanged) ------- //
 
@@ -73,6 +73,17 @@ export default function DashboardPage() {
             );
         });
 
+        const offContactDeleted = on('contact:deleted', () => {
+            setStats(prev =>
+                prev.map(s =>
+                    s.key === 'contacts'
+                        ? { ...s, value: String(Math.max(0, Number(s.value.replace(/,/g, '')) - 1)) }
+                        : s
+                )
+            );
+        });
+
+
         const offMessageSent = on('message:sent', (data) => {
             console.log('Dashboard: message sent', data);
             setStats(prev =>
@@ -84,6 +95,11 @@ export default function DashboardPage() {
             );
         });
 
+        const offWorkflowCompleted = on('workflow:completed', (data) => {
+            console.log("Workflow completed:", data);
+        });
+
+
         // Existing: data:updated listener (kept)
         const offDataUpdated = on('data:updated', (data) => {
             console.log('Dashboard received data update:', data);
@@ -91,9 +107,12 @@ export default function DashboardPage() {
 
         return () => {
             offContactAdded?.();
+            offContactDeleted?.();
             offMessageSent?.();
+            offWorkflowCompleted?.();
             offDataUpdated?.();
         };
+
     }, [on]);
 
 
